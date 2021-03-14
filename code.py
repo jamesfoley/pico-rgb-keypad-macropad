@@ -251,4 +251,4 @@ while True:
     states["previous"] = states["current"]
 
     # Prevent rapid double hits from quick presses
-    time.sleep(0.02).
+    time.sleep(0.02)
