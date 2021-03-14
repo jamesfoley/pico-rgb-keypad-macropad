@@ -55,7 +55,7 @@ def button_states():
 # Function to handle button events
 # toggle: True or False, turns the button into a toggle on / off, will run pressed when on, and released when off
 # hold: True or False, repeatedly runs the pressed function when held down, and runs released when released
-# hold_delay: ms, time between executions of the pressed function when held
+# hold_delay: seconds, time between executions of the pressed function when held
 # setup: func, runs when button is initialised, useful for setting a default colour on boot
 # pressed: func, runs when pressed unless an above modifier changes functionality
 # released: func, runs when released unless an above modifier changes functionality
@@ -157,13 +157,6 @@ def button_action(button, action):
         elif action == "pressed":
             set_pixel(button, (51, 153, 255))
             kbd.press(Keycode.SHIFT)
-            
-    elif button == 14:
-        if action == "setup" or action == "released":
-            set_pixel(button, (255, 255, 0))
-        elif action == "pressed":
-            set_pixel(button, (255, 255, 0))
-            kbd.send(Keycode.KEYPAD_PERIOD)
 
     elif button == 15:
         if action == "setup" or action == "released":
@@ -181,8 +174,8 @@ while True:
     for i in range(0, 16):
         handle_button(
             i,
-            hold=i == 14,
-            hold_delay=1,
+            hold=i == 2 or i == 3,
+            hold_delay=0.2 if i == 2 or i == 3 else 0,
             toggle=i == 12,
             setup=lambda: button_action(i, "setup"),
             pressed=lambda: button_action(i, "pressed"),
