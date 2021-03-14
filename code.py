@@ -33,7 +33,8 @@ states = {
     "setup": [0] * 16,
     "current": [0] * 16,
     "previous": [0] * 16,
-    "toggle": [0] * 16
+    "toggle": [0] * 16,
+    "hold_time": [0] * 16
 }
 
 # Function to read button states
@@ -51,7 +52,14 @@ def button_states():
                 state[i] = 0
     return state
 
-def handle_button(button, toggle=False, hold=False, setup=None, pressed=None, released=None):
+# Function to handle button events
+# toggle: True or False, turns the button into a toggle on / off, will run pressed when on, and released when off
+# hold: True or False, repeatedly runs the pressed function when held down, and runs released when released
+# hold_delay: ms, time between executions of the pressed function when held
+# setup: func, runs when button is initialised, useful for setting a default colour on boot
+# pressed: func, runs when pressed unless an above modifier changes functionality
+# released: func, runs when released unless an above modifier changes functionality
+def handle_button(button, toggle=False, hold=False, hold_delay=0, setup=None, pressed=None, released=None):
     if states["setup"][button] == 0:
         states["setup"][button] = 1
         if setup:
@@ -59,7 +67,11 @@ def handle_button(button, toggle=False, hold=False, setup=None, pressed=None, re
 
     if hold and states["current"][button] == 1:
         if pressed:
-            pressed()
+            now = time.monotonic()
+            if now - states["hold_time"][button] > hold_delay:
+                pressed()
+                states["hold_time"][button] = now
+            
     elif states["previous"][button] == 0 and states["current"][button] == 1:
         if toggle and states["toggle"][button] == 0:
             states["toggle"][button] = 1
@@ -76,13 +88,18 @@ def handle_button(button, toggle=False, hold=False, setup=None, pressed=None, re
         if not toggle:
             if released:
                 released()
+        if hold:
+            states["hold_time"][button] = 0
 
+# Cleanly set pixel colour
 def set_pixel(pixel, colour):
     pixels[pixel] = colour
 
+# Cleanly clear pixel colour
 def clear_pixel(pixel):
     pixels[pixel] = (0, 0, 0)
-
+    
+# Helper function to make button programming less painful, holds information for buttons
 def button_action(button, action):
     if button == 1:
         if action == "setup" or action == "released":
@@ -140,6 +157,13 @@ def button_action(button, action):
         elif action == "pressed":
             set_pixel(button, (51, 153, 255))
             kbd.press(Keycode.SHIFT)
+            
+    elif button == 14:
+        if action == "setup" or action == "released":
+            set_pixel(button, (255, 255, 0))
+        elif action == "pressed":
+            set_pixel(button, (255, 255, 0))
+            kbd.send(Keycode.KEYPAD_PERIOD)
 
     elif button == 15:
         if action == "setup" or action == "released":
@@ -153,9 +177,12 @@ while True:
     states["current"] = button_states()
 
     # Set up buttons
+    # Probably a little overcomplicated, but allows a function to be mapped to button events
     for i in range(0, 16):
         handle_button(
             i,
+            hold=i == 14,
+            hold_delay=1,
             toggle=i == 12,
             setup=lambda: button_action(i, "setup"),
             pressed=lambda: button_action(i, "pressed"),
