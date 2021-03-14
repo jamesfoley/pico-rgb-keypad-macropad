@@ -249,3 +249,6 @@ while True:
 
     # Store the state as previous ready for next loop
     states["previous"] = states["current"]
+
+    # Prevent rapid double hits from quick presses
+    time.sleep(0.02).
